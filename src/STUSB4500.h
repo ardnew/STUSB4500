@@ -331,7 +331,4 @@ public:
 
 // ------------------------------------------------------- exported functions --
 
-void attachInterrupt_ALRT(STUSB4500 *usbpd, uint16_t pin);
-void attachInterrupt_ATCH(STUSB4500 *usbpd, uint16_t pin);
-
 #endif /* __STUSB4500_H__ */

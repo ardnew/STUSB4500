@@ -15,6 +15,7 @@
 
 //#define I2C_READ_TIMEOUT_MS    2000
 //#define I2C_WRITE_TIMEOUT_MS   2000
+#define I2C_CLOCK_FREQ_HZ    400000
 #define DEVICE_ID              0x21 // in device ID reg (0x2F)
 #define TLOAD_REG_INIT_MS       250 // section 6.1.3 in datasheet
 #define SW_RESET_DEBOUNCE_MS     27
@@ -89,6 +90,10 @@ bool STUSB4500::begin(uint16_t const alertPin, uint16_t const attachPin)
 
   attachInterrupt(digitalPinToInterrupt(alertPin), _alertISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(attachPin), _attachISR, CHANGE);
+
+  TwoWire *wire = (TwoWire *)_wire;
+  wire->begin();
+  wire->setClock(I2C_CLOCK_FREQ_HZ);
 
   if (ready())
     { return initialize(); }
