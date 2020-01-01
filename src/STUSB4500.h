@@ -2,8 +2,8 @@
  *
  *  name: STUSB4500.h
  *  date: Dec 31, 2019
- *  auth: andrew
- *  desc:
+ *  auth: ardnew <andrew@ardnew.com>
+ *  desc: Main library interface source code
  *
  ******************************************************************************/
 

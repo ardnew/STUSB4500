@@ -1,9 +1,9 @@
 /*******************************************************************************
  *
- *  name: libstusb4500.cpp
- *  date: Dec 12, 2019
- *  auth: andrew
- *  desc:
+ *  name: STUSB4500.cpp
+ *  date: Dec 31, 2019
+ *  auth: ardnew <andrew@ardnew.com>
+ *  desc: Main library implementation source code
  *
  ******************************************************************************/
 

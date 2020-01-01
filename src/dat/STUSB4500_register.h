@@ -1,9 +1,11 @@
-/*
- * libstusb4500_registers.h
+/*******************************************************************************
  *
- *  Created on: Dec 12, 2019
- *      Author: ardnew
- */
+ *  name: STUSB4500_register.h
+ *  date: Dec 31, 2019
+ *  auth: ardnew <andrew@ardnew.com>
+ *  desc: I2C register definitions for STUSB4500 (2019 STMicroelectronics)
+ *
+ ******************************************************************************/
 
 #ifndef __LIBSTUSB4500_REGISTERS_H
 #define __LIBSTUSB4500_REGISTERS_H
