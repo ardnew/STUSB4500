@@ -1,0 +1,13 @@
+{
+  "name": "STUSB4500",
+  "keywords": "usb, usb-c, usb-pd, stusb4500, arduino",
+  "description": "Arduino library for STMicroelectronics USB PD sink controller chipset STUSB4500",
+  "exclude": "doc",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/ardnew/STUSB4500"
+  },
+  "frameworks": "arduino",
+  "platforms": "*"
+}
