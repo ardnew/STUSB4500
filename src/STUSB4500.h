@@ -25,11 +25,12 @@
 
 #define STUSB4500_I2C_SLAVE_BASE_ADDR 0x28
 
-#define USBPD_REV_3_0_SUPPORT     1
-#define USBPD_MESSAGE_QUEUE_SZ   32
-#define USBPD_INTERRUPT_QUEUE_SZ 32
-#define NVM_SNK_PDO_MAX           3
-#define NVM_SRC_PDO_MAX          10
+#define USBPD_REV_3_0_SUPPORT      1
+#define USBPD_MESSAGE_QUEUE_SZ    32
+#define USBPD_INTERRUPT_QUEUE_SZ  32
+#define NVM_SNK_PDO_MAX            3
+#define NVM_SRC_PDO_MAX           10
+#define DEFAULT_SRC_CAP_REQ_MAX  200
 
 // ------------------------------------------------------------------- macros --
 
@@ -136,7 +137,7 @@ public:
     ccStatus.d8          = 0U;
     prtStatus.d8         = 0U;
     phyStatus.d8         = 0U;
-    rdoSnk.d32    = 0U;
+    rdoSnk.d32           = 0U;
 
     pdoSnkCount = 0U;
     for (size_t i = 0U; i < NVM_SNK_PDO_MAX; ++i)
@@ -201,9 +202,11 @@ protected:
   STUSB4500Version _VERSION =
       STUSB4500Version(VERSION_MAJ, VERSION_MIN, VERSION_REV);
 
-  uint16_t          _resetPin;
-  uint8_t           _slaveAddress; // real address, NOT shifted
-  TwoWire const     *_wire;
+  uint16_t       _resetPin;
+  uint8_t        _slaveAddress; // real address, NOT shifted
+  TwoWire const *_wire;
+
+  uint16_t _srcCapRequestMax;
 
   USBPDStatus       _status;
   USBPDStateMachine _state;
@@ -253,6 +256,7 @@ public:
     _resetPin(resetPin),
     _slaveAddress(slaveAddress),
     _wire(wire),
+    _srcCapRequestMax(DEFAULT_SRC_CAP_REQ_MAX),
     _status(),
     _state()
   {
@@ -275,7 +279,8 @@ public:
 
   char const *version() { return _VERSION.str(); }
 
-  bool begin(void);      // ready the object for first use
+  // ready the object for first use, verify I2C comms
+  bool begin(uint16_t const alertPin, uint16_t const attachPin);
   bool initialize(void); // (re-)initialize the device, registers, and flags
 
   bool ready(void) const; // check if the device is responding on I2C interface
@@ -292,6 +297,9 @@ public:
   void attachISR(void);
 
   CableStatus cableStatus(void) const; // check if cable attached/orientation
+
+  void setMaxSourceCapabilityRequests(uint16_t const max)
+    { _srcCapRequestMax = max; }
 
   bool requestSourceCapabilities(void); // request source caps from source
   bool updateSinkCapabilities(void); // retrieve sink caps from device
@@ -322,5 +330,8 @@ public:
 /* nothing */
 
 // ------------------------------------------------------- exported functions --
+
+void attachInterrupt_ALRT(STUSB4500 *usbpd, uint16_t pin);
+void attachInterrupt_ATCH(STUSB4500 *usbpd, uint16_t pin);
 
 #endif /* __STUSB4500_H__ */

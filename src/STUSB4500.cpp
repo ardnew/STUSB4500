@@ -70,36 +70,52 @@ USBPDMessageHeader;
 
 // ------------------------------------------------------- exported variables --
 
-/* nothing */
+static STUSB4500 *_usbpd; // used for reference in ISRs
 
 // -------------------------------------------------------- private variables --
 
 /* nothing */
 
-// ---------------------------------------------- private function prototypes --
+// -------------------------------------------------------- private functions --
 
-/* nothing */
+static void _alertISR(void) { _usbpd->alertISR(); }
+static void _attachISR(void) { _usbpd->attachISR(); }
 
 // ------------------------------------------------------- exported functions --
+
+bool STUSB4500::begin(uint16_t const alertPin, uint16_t const attachPin)
+{
+  _usbpd = this;
+
+  attachInterrupt(digitalPinToInterrupt(alertPin), _alertISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(attachPin), _attachISR, CHANGE);
+
+  if (ready())
+    { return initialize(); }
+
+  return false;
+}
 
 /****
  * initializes the STUSB4500 device by waiting until it is responding to I2C
  * commands, clearing any current alerts, and unmasking useful interrupts.
  ****/
-bool STUSB4500::begin(void)
+bool STUSB4500::initialize(void)
 {
-  CableStatus cable = cableStatus();
-  if (!CABLE_CONNECTED(cable)) { return false; }
-
-  waitUntilReady();
-
   //stusb4500_hard_reset(dev, srwWaitReady);
 
   if (!setPDOSnkCount(1U)) { return false; }
+  if (!updatePDOSnk()) { return false; }
+  if (!updateRDOSnk()) { return false; }
   if (!clearAlerts(true)) { return false; }
   if (!updatePrtStatus()) { return false; }
   if (!clearPDOSrc()) { return false; }
-  if (!updatePDOSrc()) { return false; }
+
+  CableStatus cable = cableStatus();
+  if (CABLE_CONNECTED(cable)) {
+    if (!updatePDOSrc())
+      { return false; }
+  }
 
   return true;
 }
@@ -210,6 +226,16 @@ void STUSB4500::update(void)
   uint8_t msg;
   uint8_t value;
 
+  while (0U != _state.alertReceived) {
+    NO_INTERRUPT(--(_state.alertReceived));
+    processAlerts();
+  }
+
+  while (0U != _state.irqReceived) {
+    --(_state.irqReceived);
+    popPDInterrupt(irq);
+  }
+
   // process attach events first so that we don't do any unnecessary
   // processing until a cable is actually attached
   while (0U != _state.attachReceived) {
@@ -221,9 +247,9 @@ void STUSB4500::update(void)
     // actually changed.
     if (cablePrev != cable) {
       if (CABLE_CONNECTED(cable)) {
+        DELAY(ATTACH_DEBOUNCE_MS);
         if (NULL != _cableAttached)
           { _cableAttached(); }
-        DELAY(ATTACH_DEBOUNCE_MS);
       }
       else {
         // verify the new state isn't an error state -- that we have positively
@@ -236,16 +262,6 @@ void STUSB4500::update(void)
       }
     }
     cablePrev = cable;
-  }
-
-  while (0U != _state.alertReceived) {
-    NO_INTERRUPT(--(_state.alertReceived));
-    processAlerts();
-  }
-
-  while (0U != _state.irqReceived) {
-    --(_state.irqReceived);
-    popPDInterrupt(irq);
   }
 
   if (0U != _state.msgReceived) {
@@ -340,6 +356,22 @@ bool STUSB4500::updateSinkCapabilities(void)
   if (!updatePDOSnk()) { return false; }
 
   return true;
+}
+
+PDO STUSB4500::sourcePDO(size_t const n) const
+{
+  if (n < _status.pdoSrcCount)
+    { return _srcPDO[n]; }
+
+  return PDO(); // empty PDO
+}
+
+PDO STUSB4500::sinkPDO(size_t const n) const
+{
+  if (n < _status.pdoSnkCount)
+    { return _snkPDO[n]; }
+
+  return PDO(); // empty PDO
 }
 
 PDO STUSB4500::requestedPDO(void)
@@ -488,8 +520,8 @@ bool STUSB4500::updatePDOSnk(void)
     if (i < pdoCount) {
       _status.pdoSnk[i].d32 = LEND_u32(&pdo[j]);
       _snkPDO[i] = PDO(i + 1,
-          _status.pdoSnk[i].fix.Voltage,
-          _status.pdoSnk[i].fix.Operational_Current);
+          _status.pdoSnk[i].fix.Voltage * 50U,
+          _status.pdoSnk[i].fix.Operational_Current * 10U);
     }
     else {
       _status.pdoSnk[i].d32 = 0U;
@@ -516,8 +548,8 @@ bool STUSB4500::setPDOSnk(PDO const pdo)
     { return false; }
 
   uint16_t voltage_mV = pdo.voltage_mV;
-  if (1U == pdo.number) // PDO 1 must always be USB +5V
-    { voltage_mV = 5000U; }
+//  if (1U == pdo.number) // PDO 1 must always be USB +5V
+//    { voltage_mV = 5000U; }
 
   // use the received PDO definition #1 (USB default) as template for new PDO,
   // just update the voltage and current to the input PDO.
@@ -553,7 +585,9 @@ bool STUSB4500::updatePDOSrc(void)
 {
   waitUntilReady();
 
-  static uint8_t const maxRequests = 50U;
+  //DELAY(TLOAD_REG_INIT_MS);
+
+  static uint8_t const maxRequests = _srcCapRequestMax;
   uint8_t request = 0U;
   bool status = true;
 
@@ -634,44 +668,9 @@ void STUSB4500::processAlerts(void)
   alertMask.d8   = buff[1];
   alertStatus.d8 = buff[0] & ~(alertMask.d8);
 
-  //Serial.printf("alertStatus = 0x%02x\n", alertStatus.d8);
-
   pushPDInterrupt(alertStatus.d8);
 
   if (0U != alertStatus.d8) {
-
-    // bit 8
-    _status.hwReset = buff[0] >> 7U;
-    if (0U != _status.hwReset)
-      { ++(_state.irqHardReset); }
-
-    // bit 7
-    if (0U != alertStatus.b.CC_DETECTION_STATUS_AL) {
-      if (!wireRead(PORT_STATUS_TRANS, buff, 2U))
-        { return; }
-      _status.ccDetectionStatus.d8 = buff[1];
-      if (0U != (buff[0] & STUSBMASK_ATTACH_STATUS_TRANS))
-        { ++(_state.attachTransition); }
-    }
-
-    // bit 6
-    if (0U != alertStatus.b.MONITORING_STATUS_AL) {
-      if (!wireRead(TYPEC_MONITORING_STATUS_0, buff, 2U))
-        { return; }
-      _status.monitoringStatus.d8 = buff[1];
-    }
-
-    // always read & update CC attachement status
-    if (!wireRead(CC_STATUS, buff, 1U))
-      { return; }
-    _status.ccStatus.d8 = buff[0];
-
-    // bit 5
-    if (0U != alertStatus.b.HW_FAULT_STATUS_AL) {
-      if (!wireRead(CC_HW_FAULT_STATUS_0, buff, 2U))
-        { return; }
-      _status.hwFaultStatus.d8 = buff[1];
-    }
 
     // bit 2
     if (0U != alertStatus.b.PRT_STATUS_AL) {
@@ -713,8 +712,8 @@ void STUSB4500::processAlerts(void)
                 if (0U == i)
                   { _status.pdoSrc[i].fix.Voltage = 100U; }
                 _srcPDO[i] = PDO(i + 1,
-                    _status.pdoSrc[i].fix.Voltage,
-                    _status.pdoSrc[i].fix.Max_Operating_Current);
+                    _status.pdoSrc[i].fix.Voltage * 50U,
+                    _status.pdoSrc[i].fix.Max_Operating_Current * 10U);
               }
 
               _state.srcPDORequesting = 0U;
@@ -766,6 +765,40 @@ void STUSB4500::processAlerts(void)
         }
       }
     }
+
+    // bit 8
+    _status.hwReset = buff[0] >> 7U;
+    if (0U != _status.hwReset)
+      { ++(_state.irqHardReset); }
+
+    // bit 7
+    if (0U != alertStatus.b.CC_DETECTION_STATUS_AL) {
+      if (!wireRead(PORT_STATUS_TRANS, buff, 2U))
+        { return; }
+      _status.ccDetectionStatus.d8 = buff[1];
+      if (0U != (buff[0] & STUSBMASK_ATTACH_STATUS_TRANS))
+        { ++(_state.attachTransition); }
+    }
+
+    // bit 6
+    if (0U != alertStatus.b.MONITORING_STATUS_AL) {
+      if (!wireRead(TYPEC_MONITORING_STATUS_0, buff, 2U))
+        { return; }
+      _status.monitoringStatus.d8 = buff[1];
+    }
+
+    // always read & update CC attachement status
+    if (!wireRead(CC_STATUS, buff, 1U))
+      { return; }
+    _status.ccStatus.d8 = buff[0];
+
+    // bit 5
+    if (0U != alertStatus.b.HW_FAULT_STATUS_AL) {
+      if (!wireRead(CC_HW_FAULT_STATUS_0, buff, 2U))
+        { return; }
+      _status.hwFaultStatus.d8 = buff[1];
+    }
+
   }
 
   return;
@@ -841,4 +874,3 @@ bool STUSB4500::popPDInterrupt(uint8_t &type)
 
   return true;
 }
-
