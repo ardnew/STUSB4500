@@ -21,7 +21,7 @@
 
 #define VERSION_MAJ 1
 #define VERSION_MIN 0
-#define VERSION_REV 0
+#define VERSION_REV 1
 
 #define STUSB4500_I2C_SLAVE_BASE_ADDR 0x28
 
@@ -220,6 +220,9 @@ protected:
   USBEventCallback _sourceCapabilitiesReceived;
 
 private:
+  // whether or not the device has been initialized
+  bool _started;
+
   // I2C read/write operations
   bool wireRead(
       uint16_t const addr, uint8_t *buff, uint16_t const size) const;
@@ -280,6 +283,7 @@ public:
   char const *version() { return _VERSION.str(); }
 
   // ready the object for first use, verify I2C comms
+  bool started(void) const { return _started; }
   bool begin(uint16_t const alertPin, uint16_t const attachPin);
   bool initialize(void); // (re-)initialize the device, registers, and flags
 
@@ -330,5 +334,9 @@ public:
 /* nothing */
 
 // ------------------------------------------------------- exported functions --
+
+#undef VERSION_MAJ
+#undef VERSION_MIN
+#undef VERSION_REV
 
 #endif /* __STUSB4500_H__ */

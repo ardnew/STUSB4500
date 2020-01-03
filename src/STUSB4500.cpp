@@ -95,10 +95,11 @@ bool STUSB4500::begin(uint16_t const alertPin, uint16_t const attachPin)
   wire->begin();
   wire->setClock(I2C_CLOCK_FREQ_HZ);
 
+  _started = false;
   if (ready())
-    { return initialize(); }
+    { _started = initialize(); }
 
-  return false;
+  return _started;
 }
 
 /****
