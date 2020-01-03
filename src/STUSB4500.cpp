@@ -84,16 +84,52 @@ static void _attachISR(void) { _usbpd->attachISR(); }
 
 // ------------------------------------------------------- exported functions --
 
+STUSB4500::STUSB4500(
+    uint16_t const resetPin,
+    uint8_t const slaveAddress,
+    TwoWire const *wire
+):
+  _resetPin(resetPin),
+  _slaveAddress(slaveAddress),
+  _wire(wire),
+  _srcCapRequestMax(DEFAULT_SRC_CAP_REQ_MAX),
+  _status(),
+  _state()
+{
+  _snkRDO = PDO();
+  for (size_t i = 0U; i < NVM_SNK_PDO_MAX; ++i)
+    { _snkPDO[i] = PDO(); }
+  for (size_t i = 0U; i < NVM_SRC_PDO_MAX; ++i)
+    { _srcPDO[i] = PDO(); }
+
+  _cableAttached = nullptr;
+  _cableDetached = nullptr;
+  _sourceCapabilitiesReceived = nullptr;
+
+  _usbpd = nullptr; // NULL until begin() is called with ALRT/ATCH pins
+}
+
+STUSB4500::STUSB4500(
+    uint16_t const resetPin
+):
+  STUSB4500(
+      resetPin, STUSB4500_I2C_SLAVE_BASE_ADDR, &Wire)
+{
+  /* empty */
+}
+
 bool STUSB4500::begin(uint16_t const alertPin, uint16_t const attachPin)
 {
-  _usbpd = this;
+  if (nullptr == _usbpd) {
+    _usbpd = this;
+    attachInterrupt(digitalPinToInterrupt(alertPin), _alertISR, FALLING);
+    attachInterrupt(digitalPinToInterrupt(attachPin), _attachISR, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(alertPin), _alertISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(attachPin), _attachISR, CHANGE);
-
-  TwoWire *wire = (TwoWire *)_wire;
-  wire->begin();
-  wire->setClock(I2C_CLOCK_FREQ_HZ);
+    // initialize I2C interface
+    TwoWire *wire = (TwoWire *)_wire;
+    wire->begin();
+    wire->setClock(I2C_CLOCK_FREQ_HZ);
+  }
 
   _started = false;
   if (ready())

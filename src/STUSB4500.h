@@ -255,30 +255,8 @@ public:
       uint16_t const resetPin,
       uint8_t const slaveAddress,
       TwoWire const *wire
-  ):
-    _resetPin(resetPin),
-    _slaveAddress(slaveAddress),
-    _wire(wire),
-    _srcCapRequestMax(DEFAULT_SRC_CAP_REQ_MAX),
-    _status(),
-    _state()
-  {
-    _snkRDO = PDO();
-    for (size_t i = 0U; i < NVM_SNK_PDO_MAX; ++i)
-      { _snkPDO[i] = PDO(); }
-    for (size_t i = 0U; i < NVM_SRC_PDO_MAX; ++i)
-      { _srcPDO[i] = PDO(); }
-
-    _cableAttached = nullptr;
-    _cableDetached = nullptr;
-    _sourceCapabilitiesReceived = nullptr;
-  }
-  STUSB4500(
-      uint16_t const resetPin
-  ):
-    STUSB4500(
-        resetPin, STUSB4500_I2C_SLAVE_BASE_ADDR, &Wire)
-  {}
+  );
+  STUSB4500(uint16_t const resetPin);
 
   char const *version() { return _VERSION.str(); }
 
