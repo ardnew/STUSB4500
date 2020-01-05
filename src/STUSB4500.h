@@ -109,6 +109,19 @@ public:
     current_mA(current_mA),
     maxCurrent_mA(maxCurrent_mA)
   {}
+
+  inline bool operator==(PDO const &pdo)
+  {
+    return (    voltage_mV == pdo.voltage_mV    ) &&
+           (    current_mA == pdo.current_mA    ) &&
+           ( maxCurrent_mA == pdo.maxCurrent_mA ) ;
+  }
+  inline bool operator!=(PDO const &pdo)
+  {
+    return (    voltage_mV != pdo.voltage_mV    ) ||
+           (    current_mA != pdo.current_mA    ) ||
+           ( maxCurrent_mA != pdo.maxCurrent_mA ) ;
+  }
 };
 
 typedef void (* USBEventCallback)(void);

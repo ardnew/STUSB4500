@@ -653,8 +653,8 @@ bool STUSB4500::updateRDOSnk(void)
 
   if (rdo.b.Object_Pos > 0) {
 
-    _snkRDO.number         = rdo.b.Object_Pos;
-    _snkRDO.current_mA     = rdo.b.OperatingCurrent * 10U;
+    _snkRDO.number        = rdo.b.Object_Pos;
+    _snkRDO.current_mA    = rdo.b.OperatingCurrent * 10U;
     _snkRDO.maxCurrent_mA = rdo.b.MaxCurrent * 10U;
 
     if (_snkRDO.number <= _status.pdoSnkCount) {
