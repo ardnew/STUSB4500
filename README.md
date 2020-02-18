@@ -1,5 +1,5 @@
 # STUSB4500
-##### Arduino library for USB PD sink controller (STUSB4500)
+##### Arduino library for real-time capabilities of the STUSB4500 USB PD sink controller
 
 ----
 
