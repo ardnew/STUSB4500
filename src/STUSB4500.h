@@ -21,7 +21,7 @@
 
 #define VERSION_MAJ 1
 #define VERSION_MIN 0
-#define VERSION_REV 3
+#define VERSION_REV 4
 
 #define STUSB4500_I2C_SLAVE_BASE_ADDR 0x28
 

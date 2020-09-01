@@ -30,16 +30,16 @@
 // ----------------------------------------------------------- private macros --
 
 // convert value at addr to little-endian (16-bit)
-#define LEND_u16(addr)                                  \
-    ( ( (((uint16_t)(*(((uint8_t *)(addr)) + 0)))     ) + \
-        (((uint16_t)(*(((uint8_t *)(addr)) + 1))) << 8) ) )
+#define LE_u16(addr)                                      \
+    ( ( (((uint16_t)(*(((uint8_t *)(addr)) + 1)))     ) + \
+        (((uint16_t)(*(((uint8_t *)(addr)) + 0))) << 8) ) )
 
 // convert value at addr to little-endian (32-bit)
-#define LEND_u32(addr)                                   \
-    ( ( (((uint32_t)(*(((uint8_t *)(addr)) + 0)))      ) + \
-        (((uint32_t)(*(((uint8_t *)(addr)) + 1))) <<  8) + \
-        (((uint32_t)(*(((uint8_t *)(addr)) + 2))) << 16) + \
-        (((uint32_t)(*(((uint8_t *)(addr)) + 3))) << 24) ) )
+#define LE_u32(addr)                                       \
+    ( ( (((uint32_t)(*(((uint8_t *)(addr)) + 3)))      ) + \
+        (((uint32_t)(*(((uint8_t *)(addr)) + 2))) <<  8) + \
+        (((uint32_t)(*(((uint8_t *)(addr)) + 1))) << 16) + \
+        (((uint32_t)(*(((uint8_t *)(addr)) + 0))) << 24) ) )
 
 #define NO_INTERRUPT(e) { noInterrupts(); (e); interrupts(); }
 #define DELAY(ms) delay(ms)
@@ -144,8 +144,6 @@ bool STUSB4500::begin(uint16_t const alertPin, uint16_t const attachPin)
  ****/
 bool STUSB4500::initialize(void)
 {
-  //stusb4500_hard_reset(dev, srwWaitReady);
-
   if (!setPDOSnkCount(1U)) { return false; }
   if (!updatePDOSnk()) { return false; }
   if (!updateRDOSnk()) { return false; }
@@ -560,7 +558,7 @@ bool STUSB4500::updatePDOSnk(void)
   _status.pdoSnkCount = pdoCount;
   for (uint8_t i = 0, j = 0; i < NVM_SNK_PDO_MAX; ++i, j += 4) {
     if (i < pdoCount) {
-      _status.pdoSnk[i].d32 = LEND_u32(&pdo[j]);
+      _status.pdoSnk[i].d32 = LE_u32(&pdo[j]);
       _snkPDO[i] = PDO(i + 1,
           _status.pdoSnk[i].fix.Voltage * 50U,
           _status.pdoSnk[i].fix.Operational_Current * 10U);
@@ -728,7 +726,7 @@ void STUSB4500::processAlerts(void)
         if (!wireRead(RX_HEADER, buff, 2U))
           { return; }
 
-        header.d16 = LEND_u16(buff);
+        header.d16 = LE_u16(buff);
 
         if (header.b.dataObjectCount > 0) {
 
@@ -750,7 +748,7 @@ void STUSB4500::processAlerts(void)
               for (uint8_t i = 0U, j = 0U;
                     i < header.b.dataObjectCount;
                     ++i, j += 4) {
-                _status.pdoSrc[i].d32 = LEND_u32(&buff[j]);
+                _status.pdoSrc[i].d32 = LE_u32(&buff[j]);
                 if (0U == i)
                   { _status.pdoSrc[i].fix.Voltage = 100U; }
                 _srcPDO[i] = PDO(i + 1,
