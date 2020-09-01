@@ -60,6 +60,7 @@ Point being, it may be difficult to achieve reliable results on some systems (su
 If you have issues receiving cable attach/detach or PD capability discovery events, ensure the following:
 - You are using a **hardware** I2C port on the microcontroller
 - The I2C (SDA/SCL) and interrupt (ALRT/ATCH) wires connecting microcontroller and STUSB4500 are as short as possible
+- GND on STUSB4500 is connected to GND on microcontroller
 - VDD (VPP on oxplot breakout) is pulled up to 3.3V (or to same level as I2C bus voltage)
 - VSYS (VCC on oxplot breakout) is pulled down to ground (use microcontroller ground pin)
   - The Sparkfun breakout pulls this high to VDD ([according to their schematic](https://cdn.sparkfun.com/assets/9/2/6/8/6/SparkFun_PowerDeliveryBoardSchematic.pdf)), but the [datasheet](https://www.st.com/resource/en/datasheet/stusb4500.pdf) says to connect it to ground if it is not used (and it isn't used, because the device is powered by VBUS from the USB-C receptacle). So I'm not sure about this one. Try pulling this in the opposite direction if you're having issues.
