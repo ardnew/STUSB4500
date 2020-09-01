@@ -1,5 +1,5 @@
 # STUSB4500
-##### Arduino library for USB PD sink controller (STUSB4500)
+##### Arduino library for real-time capabilities of the STUSB4500 USB PD sink controller
 
 ----
 
@@ -7,6 +7,7 @@
 - [x] Works with native Arduino Wire (I²C) library
 - [x] USB Power Delivery v2.0 and v3.0 compatible state machine
 - [x] Designed for [STUSB4500 Compact Breakout](https://www.tindie.com/products/oxplot/stusb4500-compact-breakout/)
+   - Same chip used on the [SparkFun Power Delivery Board](https://www.sparkfun.com/products/15801), although it hasn't been tested. Feel free to send me one!
 - [x] Can analyze and identify all available power profiles
 - [x] Can request and use any arbitrary power profile +5-20V/0-5A in 50mV/10mA increments
    - Does not lose VBUS on power transition, maintains power output
