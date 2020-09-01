@@ -4,6 +4,8 @@
 #define USBPD_ATCH_PIN 24
 #define USBPD_ALRT_PIN 26
 
+#define PDO_STR_LEN    48
+
 STUSB4500 usbpd(USBPD_RST_PIN);
 
 void usbpdCableAttached(void)
@@ -23,13 +25,16 @@ void usbpdCableDetached(void)
 
 void usbpdCapabilitiesReceived(void)
 {
+  char pdoStr[PDO_STR_LEN];
+
   Serial.println("source capabilities received:");
 
   size_t n = usbpd.sourcePDOCount();
   for (size_t i = 0U; i < n; ++i) {
     PDO pdo = usbpd.sourcePDO(i);
-    Serial.printf("  %u: %umV %umA\n",
+    snprintf(pdoStr, PDO_STR_LEN, "  %u: %umV %umA",
         pdo.number, pdo.voltage_mV, pdo.current_mA);
+    Serial.println(pdoStr);
   }
 
   Serial.println("sink capabilities:");
@@ -37,8 +42,9 @@ void usbpdCapabilitiesReceived(void)
   size_t m = usbpd.sinkPDOCount();
   for (size_t i = 0U; i < m; ++i) {
     PDO pdo = usbpd.sinkPDO(i);
-    Serial.printf("  %u: %umV %umA\n",
+    snprintf(pdoStr, PDO_STR_LEN, "  %u: %umV %umA",
         pdo.number, pdo.voltage_mV, pdo.current_mA);
+    Serial.println(pdoStr);
   }
 }
 
@@ -54,13 +60,14 @@ void setup()
   usbpd.setSourceCapabilitiesReceived(usbpdCapabilitiesReceived);
 
   if (usbpd.begin(USBPD_ALRT_PIN, USBPD_ATCH_PIN)) {
-    Serial.printf("STUSB4500 v%s\n", usbpd.version());
+    Serial.print("STUSB4500 v");
+    Serial.println(usbpd.version());
 
     // set power to default USB (5V 1.5A) initially
     usbpd.setPowerDefaultUSB();
   }
   else {
-    Serial.printf("failed to initialize STUSB4500\n");
+    Serial.println("failed to initialize STUSB4500");
     while (1) { delay(1000); }
   }
 }
