@@ -16,7 +16,10 @@
 //#define I2C_READ_TIMEOUT_MS    2000
 //#define I2C_WRITE_TIMEOUT_MS   2000
 #define I2C_CLOCK_FREQ_HZ    400000
-#define DEVICE_ID              0x21 // in device ID reg (0x2F)
+
+#define EVAL_DEVICE_ID         0x21 // in device ID reg (0x2F)
+#define PROD_DEVICE_ID         0x25 //
+
 #define TLOAD_REG_INIT_MS       250 // section 6.1.3 in datasheet
 #define SW_RESET_DEBOUNCE_MS     27
 #define ATTACH_DEBOUNCE_MS       25
@@ -170,9 +173,8 @@ bool STUSB4500::ready(void) const
   uint8_t deviceID;
 
   if (!wireRead(REG_DEVICE_ID, &deviceID, 1U)) { return false; }
-  if (DEVICE_ID != deviceID) { return false; }
 
-  return true;
+  return (EVAL_DEVICE_ID == deviceID) || (PROD_DEVICE_ID == deviceID);
 }
 
 /****
