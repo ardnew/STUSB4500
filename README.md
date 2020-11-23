@@ -1,3 +1,7 @@
+### This library has been rewritten and ported to Go for use with the [TinyGo Project](https://tinygo.org/), with improved performance, stability, and device compatibility. If feasible, it is recommended you use that software for future projects ([tinygo-stusb4500](https://github.com/ardnew/tinygo-stusb4500)).
+
+----
+
 # STUSB4500
 ##### Arduino library for real-time capabilities of the STUSB4500 USB PD sink controller
 
