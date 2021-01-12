@@ -59,15 +59,15 @@ I can confirm the library functions on the following devices (similar devices sh
 |     Espressif      |        ∀        |           ESP32           |:heavy_minus_sign:|
 
 ## Troubleshooting
-The PD protocol has *very* rigid timing requirements. These can be difficult to accommodate even in normal circumstances, but is even more difficult since there is another device (our STUSB4500) mediating communication over an I2C bus, which is rather slow. This is partly why the interrupts are vital to successful operation.
+The PD protocol has *very* rigid timing requirements. These can be difficult to accommodate even in normal circumstances, but is even more difficult since there is another device (our STUSB4500) mediating communication over an I²C bus, which is rather slow. This is partly why the interrupts are vital to successful operation.
 
 Point being, it may be difficult to achieve reliable results on some systems (such as AVR-based devices like Arduino Uno), and you may need to experiment with different microcontrollers. 
 
 If you have issues receiving cable attach/detach or PD capability discovery events, ensure the following:
-- You are using a **hardware** I2C port on the microcontroller
-- The I2C (SDA/SCL) and interrupt (ALRT/ATCH) wires connecting microcontroller and STUSB4500 are as short as possible
+- You are using a **hardware** I²C port on the microcontroller
+- The I²C (SDA/SCL) and interrupt (ALRT/ATCH) wires connecting microcontroller and STUSB4500 are as short as possible
 - GND on STUSB4500 is connected to GND on microcontroller
-- VDD (VPP on oxplot breakout) is pulled up to 3.3V (or to same level as I2C bus voltage)
+- VDD (VPP on oxplot breakout) is pulled up to 3.3V (or to same level as I²C bus voltage)
 - VSYS (VCC on oxplot breakout) is pulled down to ground (use microcontroller ground pin)
   - The Sparkfun breakout pulls this high to VDD ([according to their schematic](https://cdn.sparkfun.com/assets/9/2/6/8/6/SparkFun_PowerDeliveryBoardSchematic.pdf)), but the [datasheet](https://www.st.com/resource/en/datasheet/stusb4500.pdf) says to connect it to ground if it is not used (and it isn't used, because the device is powered by VBUS from the USB-C receptacle). So I'm not sure about this one. Try pulling this in the opposite direction if you're having issues.
  
@@ -77,5 +77,4 @@ If you have issues receiving cable attach/detach or PD capability discovery even
 
 This library has been rewritten and ported to Go for use with the [TinyGo Project](https://tinygo.org/), with improved performance, stability, and device compatibility. 
 
-If feasible, I highly recommend you use that software for future projects ([tinygo-stusb4500](https://github.com/ardnew/tinygo-stusb4500)), because it is subjected to more comprehensive testing, supports many more chips and boards, and won't suffer from the fate of Arduino's I2C software library (i.e., it will run better).
-
+If feasible, I highly recommend you use that software for future projects ([tinygo-stusb4500](https://github.com/ardnew/tinygo-stusb4500)), because it is subjected to more comprehensive testing, supports many more chips and boards, and won't suffer from the fate of Arduino's Wire (I²C) library (i.e., it will run better).
